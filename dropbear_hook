@@ -13,7 +13,7 @@ run_cleanuphook ()
 {
     umount /dev/pts
     rm -R /dev/pts
-    if [ -f -f /var/run/dropbear.pid ]; then
+    if [ -f /var/run/dropbear.pid ]; then
         kill `cat /var/run/dropbear.pid`
     fi
     . /ip_opts
