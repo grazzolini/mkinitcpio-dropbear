@@ -135,8 +135,10 @@ SCRIPTEOF
 help ()
 {
     cat<<HELPEOF
-This hook should always be used in combination with the "encrypthssh" hook. 
-Add this hook before the "encryptssh", though. Together they allow to enter 
-a password for a LUKS encrypted root device either via SSH or locally. 
+This hook is meant to be used in conjunction with mkinitcpio-netconf and/or
+mkinitcpio-ppp. It DOES NOT provide any default shell. It will only install
+and start dropbear on early userspace. In the package mkinitcpio-shells you
+will find hooks and shells for remote unlocking a luks root partition,
+among others.
 HELPEOF
 }
