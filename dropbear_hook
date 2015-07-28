@@ -16,7 +16,4 @@ run_cleanuphook ()
     if [ -f /var/run/dropbear.pid ]; then
         kill `cat /var/run/dropbear.pid`
     fi
-    . /ip_opts
-    /sbin/ip addr flush dev "$device"
-    /sbin/ip link set down "$device"
 }
