@@ -83,24 +83,16 @@ build ()
   add_binary "killall"
   add_binary "dropbear"
 
-  cat /etc/dropbear/root_key > "${TMPDIR}"/authorized_keys
+  add_dir "/root/.ssh"
+  cat /etc/dropbear/root_key > "${BUILDROOT}"/root/.ssh/authorized_keys
 
-  add_dir "/.ssh"
-  add_file "${TMPDIR}/authorized_keys" "/.ssh/authorized_keys"
   add_full_dir "/etc/dropbear"
   add_file "/lib/libnss_files.so.2"
   add_dir "/var/run"
-
-  touch "${TMPDIR}"/lastlog
   add_dir "/var/log"
-  add_file "${TMPDIR}/lastlog" "/var/log/lastlog"
-
-  # cleanup
-  rm "${TMPDIR}/authorized_keys"
-  rm "${TMPDIR}/lastlog"
+  touch "${BUILDROOT}"/var/log/lastlog
 
   add_runscript
-  
 }
 
 help ()
