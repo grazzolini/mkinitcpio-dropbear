@@ -86,6 +86,9 @@ build ()
   add_dir "/root/.ssh"
   cat /etc/dropbear/root_key > "${BUILDROOT}"/root/.ssh/authorized_keys
 
+  groupadd --prefix "${BUILDROOT}" --system -g 0 root
+  useradd --prefix "${BUILDROOT}" --system -g root -u 0 -M -d /root -s /bin/sh root
+
   add_full_dir "/etc/dropbear"
   add_file "/lib/libnss_files.so.2"
   add_dir "/var/run"
