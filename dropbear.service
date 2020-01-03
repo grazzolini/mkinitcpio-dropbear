@@ -1,0 +1,11 @@
+[Unit]
+Description=Dropbear SSH Daemon
+DefaultDependencies=no
+Before=cryptsetup.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/dropbear -F -s -j -k
+
+[Install]
+WantedBy=cryptsetup.target

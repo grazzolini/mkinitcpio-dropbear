@@ -86,7 +86,14 @@ build ()
   add_dir "/var/log"
   touch "${BUILDROOT}"/var/log/lastlog
 
-  add_runscript
+  #systemd enabled
+  declare -F add_systemd_unit > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+      add_file "/usr/share/mkinitcpio-dropbear/dropbear.service" "/etc/systemd/system/dropbear.service"
+      systemctl --root "$BUILDROOT" enable dropbear.service
+  else
+      add_runscript
+  fi
 }
 
 help ()
