@@ -24,13 +24,21 @@ copy_openssh_keys() {
   local return_code=1
 
   if [ -s "$osshrsa" ]; then
-      dropbearconvert openssh dropbear $osshrsa ${dbpre}rsa_host_key
+    if dropbearconvert openssh dropbear $osshrsa ${dbpre}rsa_host_key; then
       return_code=0
+    else
+      echo "dropbearconvert needs host keys in PEM format"
+      echo "To convert existing host key use: \"ssh-keygen -p -m PEM -f $osshrsa\""
+    fi
   fi
 
   if [ -s "$osshecdsa" ]; then
-      dropbearconvert openssh dropbear $osshecdsa ${dbpre}ecdsa_host_key
+    if dropbearconvert openssh dropbear $osshecdsa ${dbpre}ecdsa_host_key; then
       return_code=0
+    else
+      echo "dropbearconvert needs host keys in PEM format"
+      echo "To convert existing host key use: \"ssh-keygen -p -m PEM -f $osshecdsa\""
+    fi
   fi
 
   return $return_code
