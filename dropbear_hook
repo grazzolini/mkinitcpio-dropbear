@@ -6,7 +6,16 @@ run_hook ()
   mount -t devpts devpts /dev/pts
 
   echo "Starting dropbear"
-  /usr/sbin/dropbear -E -s -j -k
+
+  # Configuration processing and dropbear execution is done in a subshell
+  # to prevent dropbear.conf from inadvertently clobbering important variables
+  # or terminating the shell that is running /init.
+  (
+    # Load configuration options (currently only default listen address)
+    [ -r /etc/dropbear/dropbear.conf ] && . /etc/dropbear/dropbear.conf
+    /usr/sbin/dropbear -E -s -j -k -p "${dropbear_listen:-22}"
+  )
+
 }
 
 run_cleanuphook ()
