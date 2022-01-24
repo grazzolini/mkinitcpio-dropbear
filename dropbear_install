@@ -100,7 +100,11 @@ build ()
   add_file "/lib/libnss_files.so.2"
   add_dir "/var/run"
   add_dir "/var/log"
+
   touch "${BUILDROOT}"/var/log/lastlog
+
+  [ -f "${BUILDROOT}"/etc/passwd ] || echo "root:x:0:0::/root:/bin/sh" > "${BUILDROOT}"/etc/passwd
+  [ -f "${BUILDROOT}"/etc/group ] || echo "root:x:0:" > "${BUILDROOT}"/etc/group
 
   add_runscript
 }
