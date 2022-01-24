@@ -6,44 +6,62 @@ get_fingerprint() {
 }
 
 display_fingerprints() {
-  local keyfile
+  local keyfile keytype
 
-  for keyfile in "/etc/dropbear/dropbear_rsa_host_key" "/etc/dropbear/dropbear_ecdsa_host_key" ; do
-      if [ -s "${keyfile}" ] ; then
-	  echo "$(basename "${keyfile}") : $(get_fingerprint "${keyfile}")"
-      fi
+  for keytype in rsa ecdsa ed25519; do
+    keyfile="/etc/dropbear/dropbear_${keytype}_host_key"
+    [ -s "${keyfile}" ] && echo "${keyfile##*/} : $(get_fingerprint "${keyfile}")"
   done
 }
 
-copy_openssh_keys() {
-  local osshrsa="/etc/ssh/ssh_host_rsa_key"
-  local osshecdsa="/etc/ssh/ssh_host_ecdsa_key"
+use_dropbear_keys() {
+  local keytype
 
-  local dbpre="/etc/dropbear/dropbear_"
+  for keytype in rsa ecdsa ed25519; do
+    [ -s "/etc/dropbear/dropbear_${keytype}_host_key" ] && return 0
+  done
+
+  return 1
+}
+
+copy_openssh_keys() {
+  local osshkey keytype
+
+  local dbpre="/etc/dropbear/dropbear"
 
   local return_code=1
 
-  if [ -s "$osshrsa" ]; then
-      dropbearconvert openssh dropbear $osshrsa ${dbpre}rsa_host_key
-      return_code=0
-  fi
+  for keytype in rsa ecdsa ed25519; do
+    osshkey="/etc/ssh/ssh_host_${keytype}_key"
+    [ -s "${osshkey}" ] || continue
 
-  if [ -s "$osshecdsa" ]; then
-      dropbearconvert openssh dropbear $osshecdsa ${dbpre}ecdsa_host_key
-      return_code=0
-  fi
+    if ! dropbearconvert openssh dropbear "${osshkey}" "${dbpre}_${keytype}_host_key"; then
+      error "failed to convert SSH key ${osshkey}"
+      return 1
+    fi
+
+    return_code=0
+  done
 
   return $return_code
 }
 
 generate_keys() {
   local keyfile keytype
-  for keytype in rsa ecdsa ; do
-      keyfile="/etc/dropbear/dropbear_${keytype}_host_key"
-      if [ ! -s "$keyfile" ]; then
-	  echo "Generating ${keytype} host key for dropbear ..."
-	  dropbearkey -t "${keytype}" -f "${keyfile}"
-      fi
+
+  for keytype in rsa ecdsa ed25519; do
+    keyfile="/etc/dropbear/dropbear_${keytype}_host_key"
+    [ -s "${keyfile}" ] && continue
+
+    if dropbearkey -t "${keytype}" -f "${keyfile}"; then
+      echo "Generated ${keytype} host key for dropbear"
+    elif [ "${keytype}" = "ed25519" ]; then
+      # ed25519 key is not supported by all dropbear versions; don't hard fail
+      warning "failed to generate $keytype host key for dropbear"
+    else
+      error "failed to generate ${keytype} host key for dropbear"
+      return 1
+    fi
   done
 }
 
@@ -60,16 +78,14 @@ build ()
   fi
 
   # if TMPDIR is set leave it alone otherwise set
-  [ -z $TMPDIR ] && TMPDIR='/tmp/dropbear_initrd_encrypt'
+  [ -z "$TMPDIR" ] && TMPDIR='/tmp/dropbear_initrd_encrypt'
 
   # check if TMPDIR exsists if not make it
-  [ -d $TMPDIR ] || mkdir -p $TMPDIR
-
-  umask 0022
+  [ -d "$TMPDIR" ] || mkdir -p "$TMPDIR"
 
   [ -d /etc/dropbear ] && mkdir -p /etc/dropbear
 
-  copy_openssh_keys || generate_keys
+  use_dropbear_keys || copy_openssh_keys || generate_keys
   display_fingerprints
 
   add_checked_modules "/drivers/net/"
@@ -99,3 +115,5 @@ will find hooks and shells for remote unlocking a luks root partition,
 among others.
 HELPEOF
 }
+
+# vim: softtabstop=2 shiftwidth=2 expandtab
