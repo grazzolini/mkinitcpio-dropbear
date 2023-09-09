@@ -72,32 +72,34 @@ build ()
   #
 
   # Are we even needed?
-  if [ ! -r "/etc/dropbear/root_key" -o ! -s "/etc/dropbear/root_key" ]; then
-    echo "There is no root key in /etc/dropbear/root_key existent; exit"
+  if [ ! -r "/etc/dropbear/root_key" ] || [ ! -s "/etc/dropbear/root_key" ]; then
+    echo "There is no root key in /etc/dropbear/root_key; abort"
     return 0
   fi
 
-  # if TMPDIR is set leave it alone otherwise set
-  [ -z "$TMPDIR" ] && TMPDIR='/tmp/dropbear_initrd_encrypt'
+  # Make sure TMPDIR is defined and exists
+  [ -n "$TMPDIR" ] || TMPDIR='/tmp/dropbear_initrd_encrypt'
+  mkdir -p "$TMPDIR"
 
-  # check if TMPDIR exsists if not make it
-  [ -d "$TMPDIR" ] || mkdir -p "$TMPDIR"
-
-  [ -d /etc/dropbear ] && mkdir -p /etc/dropbear
+  # Make sure /etc/dropbear exists
+  mkdir -p /etc/dropbear
 
   use_dropbear_keys || copy_openssh_keys || generate_keys
   display_fingerprints
 
   add_checked_modules "/drivers/net/"
   add_binary "rm"
-  add_binary "killall"
   add_binary "dropbear"
 
   add_dir "/root/.ssh"
   cat /etc/dropbear/root_key > "${BUILDROOT}"/root/.ssh/authorized_keys
 
   add_full_dir "/etc/dropbear"
-  add_file "/lib/libnss_files.so.2"
+
+  for f in /lib/libnss_files.so.*; do
+    [ -f "$f" ] && add_file "$f"
+  done
+
   add_dir "/var/run"
   add_dir "/var/log"
 
